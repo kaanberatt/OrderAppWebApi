@@ -59,9 +59,9 @@ namespace OrderAppWebApi.BackgroundService
 
             var username = "kaanberattokat@gmail.com "; // get from Mailtrap
 
-            var password = "Kaan.tokat0";
-            var host = "smtp.office365.com";
-            var port = 587;
+            var password = "";
+            var host = "";
+            var port = 0;
 
             var client = new SmtpClient();
             try
