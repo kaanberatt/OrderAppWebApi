@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using OrderAppWebApi.BackgroundService;
 using OrderAppWebApi.Context;
 using Serilog;
 using Serilog.Core;
@@ -27,6 +28,8 @@ Logger log = new LoggerConfiguration() //SeriLog
     .CreateLogger();
 
 builder.Host.UseSerilog(log);
+
+builder.Services.AddHostedService<SendMailService>();
 
 builder.Services.AddControllers().AddNewtonsoftJson(options =>
     options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);

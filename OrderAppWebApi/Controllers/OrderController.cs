@@ -8,8 +8,10 @@ using OrderAppWebApi.Context;
 using OrderAppWebApi.Models.Dtos;
 using OrderAppWebApi.Models.Entites;
 using OrderAppWebApi.Models.Results;
+using OrderAppWebApi.RabbitMq;
 using ServiceStack.Redis;
 using ServiceStack.Redis.Generic;
+using System.Text;
 
 namespace OrderAppWebApi.Controllers
 {
@@ -108,6 +110,8 @@ namespace OrderAppWebApi.Controllers
 
 
             // Mail işlemi yapılacak.
+            var data = Encoding.UTF8.GetBytes(createOrderRequest.CustomerEmail);
+            SetQueues.SendQueue(data);
 
             return Ok(new ApiResponse<Order>(StatusType.Success, order));
         }
