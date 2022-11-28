@@ -54,17 +54,18 @@ namespace OrderAppWebApi.BackgroundService
         public void SendMail(string toEmail)
         {
             #region Mail Content Info
-            var from = "kaan.softwareengineer@gmail.com";
+            var from = "Email Adress"; // Bu alan kişisel olarak doldurulmalıdır.
             var to = toEmail;
             var subject = "Order App Test Mail";
             var body = "Bu mail Order App uygulamasını test etmek amacıyla gönderilmiştir.";
             #endregion
 
             #region Password
-            var username = "kaan.softwareengineer@gmail.com"; // get from Mailtrap
-            var password = "21085454Kt";
-            var host = "smtp.office365.com";
-            var port = 587;
+            // Bu alanlar kişisel olarak doldurulmalıdır.
+            var username = "email"; 
+            var password = "password";
+            var host = "host adress";
+            var port = 0;
             #endregion
 
             var client = new SmtpClient();
