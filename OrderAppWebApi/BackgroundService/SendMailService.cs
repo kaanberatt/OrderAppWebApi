@@ -14,7 +14,8 @@ namespace OrderAppWebApi.BackgroundService
         // Kuyruğu dinleyecek.
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            timer = new Timer(SendQueue, null, TimeSpan.Zero, TimeSpan.FromSeconds(30));
+            // Her 60 saniyede 1 SendQueue methodu tetiklenecek.
+            timer = new Timer(SendQueue, null, TimeSpan.Zero, TimeSpan.FromSeconds(60));
             return Task.CompletedTask;            
         }
         public void SendQueue(object? state)
@@ -31,11 +32,11 @@ namespace OrderAppWebApi.BackgroundService
                 #endregion
 
                 var consumer = new EventingBasicConsumer(channel);
-                SendMail("kaanberattokat@gmail.com");
 
                 consumer.Received += (obj, e) =>
                 {
                     var result = Encoding.UTF8.GetString(e.Body.ToArray());
+                    SendMail(result);
                     Console.WriteLine("Kuyruktaki işlemi tamamladım!");
                 };
                 channel.BasicConsume(queueName, true, consumer);
@@ -52,26 +53,33 @@ namespace OrderAppWebApi.BackgroundService
         }
         public void SendMail(string toEmail)
         {
-            var from = "kaanberattokat@gmail.com";
+            #region Mail Content Info
+            var from = "kaan.softwareengineer@gmail.com";
             var to = toEmail;
-            var subject = "Test mail";
-            var body = "Test body";
+            var subject = "Order App Test Mail";
+            var body = "Bu mail Order App uygulamasını test etmek amacıyla gönderilmiştir.";
+            #endregion
 
-            var username = "kaanberattokat@gmail.com "; // get from Mailtrap
-
-            var password = "Kaan.tokat0";
+            #region Password
+            var username = "kaan.softwareengineer@gmail.com"; // get from Mailtrap
+            var password = "21085454Kt";
             var host = "smtp.office365.com";
             var port = 587;
+            #endregion
 
             var client = new SmtpClient();
             try
             {
+                #region Mail Configuration
                 client.Host = host;
                 client.Port = port;
                 client.Credentials = new NetworkCredential(username, password);
                 client.EnableSsl = true;
                 client.UseDefaultCredentials = false;
-                client.Send(from, to, subject, body) ;
+
+                #endregion
+
+                client.Send(from, to, subject, body); // send mail
             }
             catch (Exception ex)
             {

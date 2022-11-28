@@ -21,7 +21,7 @@ namespace OrderAppWebApi.Controllers
     {
         private readonly IMemoryCache _memoryCache;
         private readonly OrderContext _context;
-        private readonly IMapper _mapper;
+        private readonly IMapper _mapper; // For Auto-Mapper
 
         public OrderController(IMemoryCache memoryCache, OrderContext context, IMapper mapper)
         {
@@ -31,52 +31,57 @@ namespace OrderAppWebApi.Controllers
         }
 
         #region Logged in Memory-Cache 
+        [Route("/api/GetDatasWithMemoryCache")]
+        [HttpGet]
+        public async Task<IActionResult> GetData(string? category)
+        {
+            var result = new List<Product>();
+            if (category == null)
+            {
+                result = _memoryCache.Get("products") as List<Product>;
+                //Daha önceden ilgili key’e (products'a) ait bir kayıt var mı diye bakılmıştır. 
+                if (result == null)
+                {
+                    result = await _context.Products.ToListAsync();
+                    _memoryCache.Set("products", result, TimeSpan.FromMinutes(10));
+                }
+            }
+            else
+            {
+                result = _memoryCache.Get($"products-{category}") as List<Product>;
+                if (result == null)
+                {
+                    result = await _context.Products.Where(p => p.Category == category).ToListAsync();
+                    _memoryCache.Set($"products-{category}", result, TimeSpan.FromMinutes(10));
+                }
+            }
+            var productDtos = _mapper.Map<List<Product>, List<ProductDto>>(result);
+            // Auto-Mapper aracılığıyla Product türünden ProductDto'ya dönüştürülmüştür.
 
-        //[HttpGet]
-        //public async Task<IActionResult> Get(string? category)
-        //{
-        //    var result = new List<Product>();
-        //    if (category == null)
-        //    {
-        //        result = _memoryCache.Get("products") as List<Product>;
-        //        if (result == null)
-        //        {
-        //            result = await _context.Products.ToListAsync();
-        //            _memoryCache.Set("products", result, TimeSpan.FromMinutes(10));
-        //        }
-        //    }
-        //    else
-        //    {
-        //        result = _memoryCache.Get($"products-{category}") as List<Product>;
-        //        if (result == null)
-        //        {
-        //            result = await _context.Products.Where(p => p.Category == category).ToListAsync();
-        //            _memoryCache.Set($"products-{category}", result, TimeSpan.FromMinutes(10));
-        //        }
-        //    }
-        //    var productDtos = _mapper.Map<List<Product>, List<ProductDto>>(result);
-        //    // Auto-Mapper aracılığıyla Product türünden ProductDto'ya dönüştürülmüştür.
-
-        //    return Ok(new ApiResponse<List<ProductDto>>(StatusType.Success, productDtos));
-        //}
+            return Ok(new ApiResponse<List<ProductDto>>(StatusType.Success, productDtos));
+        }
 
         #endregion
 
         #region Logged in Redis
+        [Route("/api/GetDatasWithRedisCache")]
         [HttpGet]
         public async Task<IActionResult> Get(string? category)
         {
-            var redisclient = new RedisClient("localhost", 6379);
+            // Redis server'ı aktif olmalıdır.
+            var redisclient = new RedisClient("localhost", 6379); //Connection Redis
             IRedisTypedClient<List<Product>> redisProducts = redisclient.As<List<Product>>();
 
             var result = new List<Product>();
             if (category == null)
             {
                 result = redisclient.Get<List<Product>>("products");
+                //Daha önceden ilgili key’e (products'a) ait bir kayıt var mı diye bakılmıştır.
                 if (result == null)
                 {
                     result = await _context.Products.ToListAsync();
-                    redisclient.Set("products", result, TimeSpan.FromMinutes(10));
+                    redisclient.Set("products", result, TimeSpan.FromMinutes(10)); 
+                    //Redis cache'de data yoksa 10 dakika boyunca cachde kalacak şekilde ayarlanır.
                 }
             }
             else
@@ -109,9 +114,9 @@ namespace OrderAppWebApi.Controllers
             await _context.SaveChangesAsync();
 
 
-            // Mail işlemi yapılacak.
+            // Mail Adresi byte[] olarak alınır ve kuyruğa döndermek için SetQueue methodu çağırılır.
             var data = Encoding.UTF8.GetBytes(createOrderRequest.CustomerEmail);
-            SetQueues.SendQueue(data);
+            SetQueues.SetQueue(data);
 
             return Ok(new ApiResponse<Order>(StatusType.Success, order));
         }
